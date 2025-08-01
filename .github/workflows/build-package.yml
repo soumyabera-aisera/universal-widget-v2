@@ -24,7 +24,6 @@ jobs:
         with:
           repository: soumyabera-aisera/widget-templates # Replace with your actual template repo
           path: widget-templates
-          # Removed: token: ${{ secrets.WIDGET_TEMPLATES_REPO_TOKEN }} # Not needed for public repos
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -35,15 +34,18 @@ jobs:
         run: npm install
         working-directory: universal-widget-v2
 
-      - name: Build and Package for Zendesk
+      - name: Build Universal Widget for Zendesk
+        if: github.event.inputs.platform == 'Zendesk'
+        run: npm run build:zendesk
+        working-directory: universal-widget-v2 # Run build command from within the widget repo
+
+      - name: Assemble Zendesk App Package
         if: github.event.inputs.platform == 'Zendesk'
         run: |
-          echo "Building for Zendesk..."
-          # Build the universal widget into a single HTML file for Zendesk using the specific config
-          npm run build:zendesk
-          # Create the Zendesk app package directory
+          echo "Assembling Zendesk package..."
+          # Create the Zendesk app package directory at the root of the runner's workspace
           mkdir -p zendesk-app-package
-          # Copy the built HTML file to the package directory (it will be in dist-zendesk)
+          # Copy the built HTML file from universal-widget-v2/dist-zendesk to zendesk-app-package
           cp universal-widget-v2/dist-zendesk/index.html zendesk-app-package/
           # Copy Zendesk specific scaffolding files from widget-templates
           cp widget-templates/zendesk/manifest.json zendesk-app-package/
@@ -51,22 +53,20 @@ jobs:
           cp widget-templates/zendesk/translations/en.json zendesk-app-package/translations/
           # Copy assets (logos, etc.) from widget-templates/zendesk/assets to zendesk-app-package/assets
           mkdir -p zendesk-app-package/assets
-          # The '|| true' allows the command to succeed even if the source directory is empty
-          cp widget-templates/zendesk/assets/* zendesk-app-package/assets/ || true
+          cp widget-templates/zendesk/assets/* zendesk-app-package/assets/ || true # Allow failure if dir is empty
           echo "Zendesk package content:"
           ls -R zendesk-app-package/
-        working-directory: . # Run from root of the main repo
+        working-directory: . # Run from the root of the runner to manage files from both checked-out repos
 
       - name: Create Zendesk App Zip
         if: github.event.inputs.platform == 'Zendesk'
-        uses: thedoctor0/zip-release@0.7.5 # Action to create zip archive
+        uses: thedoctor0/zip-release@0.7.5
         with:
           type: 'zip'
           filename: 'zendesk-universal-widget.zip'
-          directory: 'zendesk-app-package' # The directory to zip
-          path: '.' # Zip the contents of zendesk-app-package
-          exclusions: '*.git* /*node_modules/*' # Exclude unnecessary files
-        working-directory: . # Run from root of the main repo
+          directory: 'zendesk-app-package' # This parameter specifies the directory to zip
+          path: '.' # Zip the contents of the specified 'directory'
+          exclusions: '*.git* /*node_modules/*'
 
       - name: Upload Zendesk Artifact
         if: github.event.inputs.platform == 'Zendesk'

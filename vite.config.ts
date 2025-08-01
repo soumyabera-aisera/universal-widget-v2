@@ -18,7 +18,7 @@ export default defineConfig({
     cssMinify: 'esbuild', // Use esbuild for fast CSS minification [1]
     rollupOptions: {
       // Keep external empty to bundle all dependencies (including Lit runtime) for self-containment
-      external: ,
+      external: [], // Corrected: Should be an empty array
       output: {
         inlineDynamicImports: true, // Ensure dynamic imports are inlined [1]
       },

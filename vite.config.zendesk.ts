@@ -4,7 +4,7 @@ import { resolve } from 'path';
 import { viteSingleFile } from 'vite-plugin-singlefile'; // [2]
 
 export default defineConfig({
-  plugins:,
+  plugins: [],
   build: {
     // The entry point for the HTML file that will contain the widget
     rollupOptions: {
