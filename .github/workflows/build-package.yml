@@ -48,12 +48,12 @@ jobs:
           # Copy the built HTML file from universal-widget-v2/dist-zendesk to zendesk-app-package
           cp universal-widget-v2/dist-zendesk/index.html zendesk-app-package/
           # Copy Zendesk specific scaffolding files from widget-templates
-          cp widget-templates/zendesk/manifest.json zendesk-app-package/
+          cp widget-templates/zendesk-template/manifest.json zendesk-app-package/
           mkdir -p zendesk-app-package/translations
-          cp widget-templates/zendesk/translations/en.json zendesk-app-package/translations/
-          # Copy assets (logos, etc.) from widget-templates/zendesk/assets to zendesk-app-package/assets
+          cp widget-templates/zendesk-template/translations/en.json zendesk-app-package/translations/
+          # Copy assets (logos, etc.) from widget-templates/zendesk-template/assets to zendesk-app-package/assets
           mkdir -p zendesk-app-package/assets
-          cp widget-templates/zendesk/assets/* zendesk-app-package/assets/ || true # Allow failure if dir is empty
+          cp widget-templates/zendesk-template/assets/* zendesk-app-package/assets/ || true # Allow failure if dir is empty
           echo "Zendesk package content:"
           ls -R zendesk-app-package/
         working-directory: . # Run from the root of the runner to manage files from both checked-out repos
