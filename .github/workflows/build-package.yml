@@ -1,0 +1,85 @@
+#.github/workflows/build-package.yml
+name: Build and Package Universal Widget
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: 'Target platform (e.g., Zendesk, Salesforce, ServiceNow)'
+        required: true
+        default: 'Zendesk'
+
+jobs:
+  build-and-package:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout universal-widget-v2 repository
+        uses: actions/checkout@v4
+        with:
+          path: universal-widget-v2
+
+      - name: Checkout widget-templates repository
+        uses: actions/checkout@v4
+        with:
+          repository: soumyabera-aisera/widget-templates # Replace with your actual template repo
+          path: widget-templates
+          # Removed: token: ${{ secrets.WIDGET_TEMPLATES_REPO_TOKEN }} # Not needed for public repos
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies for universal-widget-v2
+        run: npm install
+        working-directory: universal-widget-v2
+
+      - name: Build and Package for Zendesk
+        if: github.event.inputs.platform == 'Zendesk'
+        run: |
+          echo "Building for Zendesk..."
+          # Build the universal widget into a single HTML file for Zendesk using the specific config
+          npm run build:zendesk
+          # Create the Zendesk app package directory
+          mkdir -p zendesk-app-package
+          # Copy the built HTML file to the package directory (it will be in dist-zendesk)
+          cp universal-widget-v2/dist-zendesk/index.html zendesk-app-package/
+          # Copy Zendesk specific scaffolding files from widget-templates
+          cp widget-templates/zendesk/manifest.json zendesk-app-package/
+          mkdir -p zendesk-app-package/translations
+          cp widget-templates/zendesk/translations/en.json zendesk-app-package/translations/
+          # Copy assets (logos, etc.) from widget-templates/zendesk/assets to zendesk-app-package/assets
+          mkdir -p zendesk-app-package/assets
+          # The '|| true' allows the command to succeed even if the source directory is empty
+          cp widget-templates/zendesk/assets/* zendesk-app-package/assets/ || true
+          echo "Zendesk package content:"
+          ls -R zendesk-app-package/
+        working-directory: . # Run from root of the main repo
+
+      - name: Create Zendesk App Zip
+        if: github.event.inputs.platform == 'Zendesk'
+        uses: thedoctor0/zip-release@0.7.5 # Action to create zip archive
+        with:
+          type: 'zip'
+          filename: 'zendesk-universal-widget.zip'
+          directory: 'zendesk-app-package' # The directory to zip
+          path: '.' # Zip the contents of zendesk-app-package
+          exclusions: '*.git* /*node_modules/*' # Exclude unnecessary files
+        working-directory: . # Run from root of the main repo
+
+      - name: Upload Zendesk Artifact
+        if: github.event.inputs.platform == 'Zendesk'
+        uses: actions/upload-artifact@v4
+        with:
+          name: zendesk-universal-widget
+          path: zendesk-universal-widget.zip
+          retention-days: 5
+
+      - name: Handle Salesforce (Not Implemented Yet)
+        if: github.event.inputs.platform == 'Salesforce'
+        run: echo "Salesforce packaging is not yet implemented. Please refer to the documentation for manual steps."
+
+      - name: Handle ServiceNow (Not Implemented Yet)
+        if: github.event.inputs.platform == 'ServiceNow'
+        run: echo "ServiceNow packaging is not yet implemented. Please refer to the documentation for manual steps."
