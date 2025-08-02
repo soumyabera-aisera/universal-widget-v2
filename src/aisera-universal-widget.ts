@@ -58,40 +58,7 @@ export class AiseraUniversalWidget extends LitElement {
 
   render() {
     return html`
-      <div class="widget-header">${this.title}</div>
-
-      <div class="widget-section">
-        <div class="section-title">Summary</div>
-        <div class="section-content">
-          This is a summary of the current interaction or context. It provides a quick overview of the key points.
-        </div>
-      </div>
-
-      <div class="widget-section">
-        <div class="section-title">Aisera Answer</div>
-        <div class="section-content">
-          Based on the available data, Aisera suggests the following answer: "The customer's query pertains to account activation issues, which can typically be resolved by verifying their registered email and recent login attempts."
-        </div>
-      </div>
-
-      <div class="widget-section next-best-actions">
-        <div class="section-title">Next Best Actions</div>
-        <div class="section-content">
-          <ul>
-            <li>Verify customer's email address.</li>
-            <li>Check recent login activity for anomalies.</li>
-            <li>Provide link to password reset page.</li>
-            <li>Offer to initiate a live chat with a specialist.</li>
-          </ul>
-        </div>
-      </div>
-
-      <div class="widget-section">
-        <div class="section-title">Wrap Up</div>
-        <div class="section-content">
-          Ensure all relevant information is logged and the customer is satisfied with the resolution.
-        </div>
-      </div>
+      
     `;
   }
 }
