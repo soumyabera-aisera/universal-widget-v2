@@ -54,14 +54,14 @@ jobs:
 
           # Find the hashed JS bundle filename
           # FIX: Updated the filename to match the new entry point
-          JS_FILE_PATH=$(find universal-widget-v2/dist-zendesk/assets/build -name "aisera-universal-widget.*.bundle.js" -print -quit)
+          JS_FILE_PATH=$(find universal-widget-v2/dist-zendesk/assets/build -name "ticketSidebar.*.bundle.js" -print -quit)
           JS_FILE=$(basename "$JS_FILE_PATH")
           echo "Found JS file: $JS_FILE"
           echo "JS_FILE=$JS_FILE" >> $GITHUB_OUTPUT
 
           # Find the hashed CSS file filename
           # FIX: Updated the filename to match the new entry point
-          CSS_FILE_PATH=$(find universal-widget-v2/dist-zendesk/assets/build -name "aisera-universal-widget.*.css" -print -quit)
+          CSS_FILE_PATH=$(find universal-widget-v2/dist-zendesk/assets/build -name "ticketSidebar.*.css" -print -quit)
           CSS_FILE=$(basename "$CSS_FILE_PATH")
           echo "Found CSS file: $CSS_FILE"
           echo "CSS_FILE=$CSS_FILE" >> $GITHUB_OUTPUT
@@ -111,7 +111,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: zendesk-app-package
-          path: zendesk-app-package/tmp/*.zip
+          path: |
+            zendesk-app-package/tmp/*.zip
+            ./tmp/*.zip
           retention-days: 5
 
       - name: Handle Salesforce (Not Implemented Yet)

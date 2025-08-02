@@ -10,14 +10,13 @@ export default defineConfig({
     minify: 'esbuild',
     cssMinify: 'esbuild',
     rollupOptions: {
-      // FIX: The input key is now 'aisera-universal-widget' to match the existing file.
+      // CRITICAL FIX: The input is now 'ticketSidebar' and points to the new zendesk-entry.ts file.
       input: {
-        'aisera-universal-widget': resolve(__dirname, 'src/aisera-universal-widget.ts'),
+        'ticketSidebar': resolve(__dirname, 'src/zendesk-entry.ts'),
       },
       output: {
         assetFileNames: 'assets/build/[name].[hash].css',
         chunkFileNames: 'assets/build/[name].[hash].js',
-        // And the entry file has the .bundle.js suffix.
         entryFileNames: 'assets/build/[name].[hash].bundle.js',
       },
     },
