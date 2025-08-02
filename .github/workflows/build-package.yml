@@ -45,6 +45,21 @@ jobs:
         run: npm run build:zendesk
         working-directory: universal-widget-v2 # Run build command from within the widget repo
 
+      - name: Get Hashed Filenames
+        if: github.event.inputs.platform == 'Zendesk'
+        id: get_filenames
+        run: |
+          # Find the hashed JS bundle filename (e.g., ticketSidebar.[hash].bundle.js)
+          JS_FILE=$(find universal-widget-v2/dist-zendesk/assets/build -name "ticketSidebar.*.bundle.js" -print -quit | xargs basename)
+          echo "Found JS file: $JS_FILE"
+          echo "JS_FILE=$JS_FILE" >> $GITHUB_OUTPUT
+
+          # Find the hashed CSS file filename (e.g., ticketSidebar.[hash].css)
+          CSS_FILE=$(find universal-widget-v2/dist-zendesk/assets/build -name "ticketSidebar.*.css" -print -quit | xargs basename)
+          echo "Found CSS file: $CSS_FILE"
+          echo "CSS_FILE=$CSS_FILE" >> $GITHUB_OUTPUT
+        working-directory: .
+
       - name: Assemble Zendesk App Package
         if: github.event.inputs.platform == 'Zendesk'
         run: |
@@ -56,6 +71,11 @@ jobs:
 
           # Copy the index.html shell from widget-templates to zendesk-app-package/assets/build/
           cp widget-templates/zendesk-template/index.html zendesk-app-package/assets/build/
+
+          # --- CRITICAL FIX: Use sed to replace placeholders with the actual hashed filenames ---
+          # We use a different delimiter '|' to avoid issues with '/' in paths.
+          sed -i "s|TICKET_SIDEBAR_JS_PLACEHOLDER|${{ steps.get_filenames.outputs.JS_FILE }}|g" zendesk-app-package/assets/build/index.html
+          sed -i "s|TICKET_SIDEBAR_CSS_PLACEHOLDER|${{ steps.get_filenames.outputs.CSS_FILE }}|g" zendesk-app-package/assets/build/index.html
 
           # Copy the generated JS and CSS bundles from universal-widget-v2/dist-zendesk/assets/build/
           # These will have hashed filenames, e.g., main.[hash].js, main.[hash].css
