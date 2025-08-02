@@ -120,6 +120,30 @@ jobs:
         if: github.event.inputs.platform == 'Salesforce'
         run: echo "Salesforce packaging is not yet implemented. Please refer to the documentation for manual steps."
 
-      - name: Handle ServiceNow (Not Implemented Yet)
+      # =================================================================
+      #                       ServiceNow Pipeline
+      # =================================================================
+      - name: Build Universal Widget for ServiceNow
         if: github.event.inputs.platform == 'ServiceNow'
-        run: echo "ServiceNow packaging is not yet implemented. Please refer to the documentation for manual steps."
+        run: npm run build:servicenow
+        working-directory: universal-widget-v2
+
+      - name: Install ServiceNow CLI (snc)
+        if: github.event.inputs.platform == 'ServiceNow'
+        run: npm install -g @servicenow/cli
+
+      - name: Deploy to ServiceNow
+        if: github.event.inputs.platform == 'ServiceNow'
+        env:
+          SNC_USERNAME: ${{ inputs.username }}
+          SNC_PASSWORD: ${{ inputs.password }}
+        run: |
+          echo "Deploying to ServiceNow instance: ${{ inputs.loginHost }}"
+          mkdir -p servicenow-app/snc-web-component/
+          cp -r universal-widget-v2/dist/assets/build/servicenow-component.* servicenow-app/snc-web-component/
+          
+          snc ui-component deploy \
+            --loginHost ${{ inputs.loginHost }} \
+            --username $SNC_USERNAME \
+            --password $SNC_PASSWORD \
+            --componentDir 'servicenow-app'
