@@ -68,7 +68,15 @@ jobs:
 
       - name: Install ZCLI
         if: github.event.inputs.platform == 'Zendesk'
-        run: npm install @zendesk/zcli -g # Install ZCLI globally [2]
+        run: npm install @zendesk/zcli -g # Install ZCLI globally
+
+      - name: Package Zendesk App for Artifact (explicitly create zip)
+        if: github.event.inputs.platform == 'Zendesk'
+        run: |
+          echo "Packaging Zendesk app for artifact using zcli apps:package..."
+          # This command explicitly creates the zip file in./tmp/ [1]
+          zcli apps:package ./zendesk-app-package
+        working-directory: .
 
       - name: Validate, Package, and Deploy to Zendesk
         if: github.event.inputs.platform == 'Zendesk'
