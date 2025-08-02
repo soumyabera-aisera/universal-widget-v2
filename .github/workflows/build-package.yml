@@ -46,7 +46,7 @@ jobs:
           # Create the Zendesk app package directory and its assets subdirectory
           mkdir -p zendesk-app-package/assets # NEW: Create assets subdirectory
           # Copy the built HTML file from universal-widget-v2/dist-zendesk to zendesk-app-package/assets/
-          cp universal-widget-v2/dist-zendesk-template/index.html zendesk-app-package/assets/ # NEW: Copy to assets/
+          cp universal-widget-v2/dist-zendesk/index.html zendesk-app-package/assets/ # NEW: Copy to assets/
           # Copy Zendesk specific scaffolding files from widget-templates
           cp widget-templates/zendesk-template/manifest.json zendesk-app-package/
           mkdir -p zendesk-app-package/translations
