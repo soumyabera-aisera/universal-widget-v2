@@ -102,6 +102,7 @@ jobs:
           ZENDESK_API_TOKEN: ${{ secrets.ZENDESK_API_TOKEN }}
         run: |
           echo "Deploying Zendesk app using zcli..."
+          zcli apps:package ./zendesk-app-package
           zcli apps:update ./zendesk-app-package
         working-directory: .
 
