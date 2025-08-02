@@ -137,10 +137,13 @@ jobs:
       - name: Install ServiceNow CLI (snc)
         if: github.event.inputs.platform == 'ServiceNow'
         run: npm install -g @servicenow/cli
-
+      
+      # FIX: Use NPM_CONFIG_PREFIX to reliably find the global bin directory
       - name: Add Node Global Bin to PATH
         if: github.event.inputs.platform == 'ServiceNow'
-        run: echo "$(npm config get prefix)/bin" >> $GITHUB_PATH
+        run: echo "$NPM_CONFIG_PREFIX/bin" >> $GITHUB_PATH
+        env:
+          NPM_CONFIG_PREFIX: ${{ env.NPM_CONFIG_PREFIX }}
 
       - name: Deploy to ServiceNow
         if: github.event.inputs.platform == 'ServiceNow'
