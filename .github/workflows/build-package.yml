@@ -54,6 +54,7 @@ jobs:
           # Copy assets (logos, etc.) from widget-templates/zendesk-template/assets to zendesk-app-package/assets
           mkdir -p zendesk-app-package/assets
           cp widget-templates/zendesk-template/assets/* zendesk-app-package/assets/ || true # Ignore errors if no assets are found
+          cp widget-templates/zendesk-template/zcli.apps.config.json zendesk-app-package/
           echo "Zendesk package content:"
           ls -R zendesk-app-package/
         working-directory: . # Run from the root of the runner to manage files from both checked-out repos
