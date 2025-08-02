@@ -73,7 +73,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: zendesk-universal-widget
-          path: zendesk-universal-widget.zip
+          path: zendesk-app-package/zendesk-universal-widget.zip # Corrected path
           retention-days: 5
 
       - name: Handle Salesforce (Not Implemented Yet)
