@@ -1,26 +1,34 @@
-// vite.config.zendesk.ts
+// universal-widget-v2/vite.config.zendesk.ts
 import { defineConfig } from 'vite';
 import { resolve } from 'path';
-import { viteSingleFile } from 'vite-plugin-singlefile'; // [2]
 
 export default defineConfig({
-  plugins: [],
+  base: './',
   build: {
-    // The entry point for the HTML file that will contain the widget
+    // Output directory for the Zendesk build
+    outDir: 'dist-zendesk',
+    emptyOutDir: true, // Clear the output directory before building
+    minify: 'esbuild', // Minify JavaScript using esbuild
+    cssMinify: 'esbuild', // Minify CSS using esbuild
+
+    // Configure Rollup for the build process
     rollupOptions: {
+      // Define the entry point for the application.
+      // This will be your main widget file, which Vite will process
+      // and generate the necessary JS and CSS bundles from.
       input: {
-        app: resolve(__dirname, 'index.html'), // Use index.html as the entry point [2]
+        main: resolve(__dirname, 'src/aisera-universal-widget.ts'),
       },
       output: {
-        inlineDynamicImports: true, // Ensure all assets are inlined into the HTML [1]
-        assetFileNames: '[name].[ext]', // Keep original names for assets if not inlined
-        chunkFileNames: '[name].js',
-        entryFileNames: '[name].js',
+        // Configure naming and paths for generated assets (JS, CSS, etc.)
+        // This ensures they are placed into 'assets/build/' within the 'dist-zendesk' folder.
+        assetFileNames: 'assets/build/[name].[hash].[ext]', // For CSS files
+        chunkFileNames: 'assets/build/[name].[hash].js',    // For JS chunks
+        entryFileNames: 'assets/build/[name].[hash].js',    // For the main JS entry file
       },
     },
-    outDir: 'dist-zendesk', // Output to a specific directory for Zendesk
-    emptyOutDir: true,
-    minify: 'esbuild',
-    cssMinify: 'esbuild',
+    
+    // Target modern browsers for the build output
+    target: 'es2017',
   },
 });

@@ -49,22 +49,30 @@ jobs:
         if: github.event.inputs.platform == 'Zendesk'
         run: |
           echo "Assembling Zendesk package..."
-          # Create the Zendesk app package directory and its assets subdirectory
-          mkdir -p zendesk-app-package/assets # NEW: Create assets subdirectory
-          # Copy the built HTML file from universal-widget-v2/dist-zendesk to zendesk-app-package/assets/
-          cp universal-widget-v2/dist-zendesk/index.html zendesk-app-package/assets/ # NEW: Copy to assets/
-          # Copy Zendesk specific scaffolding files from widget-templates
+          # Create the main package directory
+          mkdir -p zendesk-app-package
+          # Create the assets/build subdirectory
+          mkdir -p zendesk-app-package/assets/build
+
+          # Copy the index.html shell from widget-templates to zendesk-app-package/assets/build/
+          cp widget-templates/zendesk-template/index.html zendesk-app-package/assets/build/
+
+          # Copy the generated JS and CSS bundles from universal-widget-v2/dist-zendesk/assets/build/
+          # These will have hashed filenames, e.g., main.[hash].js, main.[hash].css
+          cp universal-widget-v2/dist-zendesk/assets/build/* zendesk-app-package/assets/build/ || true
+
+          # Copy manifest.json and zcli.apps.config.json to the root of the package
           cp widget-templates/zendesk-template/manifest.json zendesk-app-package/
+          cp widget-templates/zendesk-template/zcli.apps.config.json zendesk-app-package/
+          # Copy translations to the translations/ directory
           mkdir -p zendesk-app-package/translations
           cp widget-templates/zendesk-template/translations/en.json zendesk-app-package/translations/
-          # Copy assets (logos, etc.) from widget-templates/zendesk-template/assets to zendesk-app-package/assets
-          # This line is already correctly copying to zendesk-app-package/assets
+          # Copy other static assets (logos, screenshots etc.) directly into the assets/ folder
           cp widget-templates/zendesk-template/assets/* zendesk-app-package/assets/ || true
-          # Copy zcli.apps.config.json to the app package root
-          cp widget-templates/zendesk-template/zcli.apps.config.json zendesk-app-package/
+
           echo "Zendesk package content:"
           ls -R zendesk-app-package/
-        working-directory: . # Run from the root of the runner to manage files from both checked-out repos
+        working-directory: .
 
       - name: Install ZCLI
         if: github.event.inputs.platform == 'Zendesk'
@@ -89,7 +97,7 @@ jobs:
         with:
           name: zendesk-app-package
           # zcli apps:update creates the package in a 'tmp' directory at the execution root before uploading
-          path: ./tmp/*.zip
+          path: zendesk-app-package/tmp/app.zip
           retention-days: 5
 
       - name: Handle Salesforce (Not Implemented Yet)
