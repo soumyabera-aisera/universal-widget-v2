@@ -8,6 +8,12 @@ on:
         description: 'Target platform (e.g., Zendesk, Salesforce, ServiceNow)'
         required: true
         default: 'Zendesk'
+    
+      config: # New input for configuration array
+        description: 'Configuration settings (e.g., ["setting1", "setting2"])'
+        required: false
+        type: string # Representing an array as a JSON string
+        default: '' # Default to an empty JSON array string
 
 jobs:
   build-and-package:
