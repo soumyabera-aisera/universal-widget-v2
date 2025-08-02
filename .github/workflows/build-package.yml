@@ -97,7 +97,7 @@ jobs:
         with:
           name: zendesk-app-package
           # zcli apps:update creates the package in a 'tmp' directory at the execution root before uploading
-          path: zendesk-app-package/tmp/app.zip
+          path: zendesk-app-package/tmp/*.zip
           retention-days: 5
 
       - name: Handle Salesforce (Not Implemented Yet)
