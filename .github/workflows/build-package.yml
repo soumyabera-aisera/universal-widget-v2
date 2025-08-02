@@ -9,11 +9,11 @@ on:
         required: true
         default: 'Zendesk'
     
-      config: # New input for configuration array
+      config:
         description: 'Configuration settings (e.g., ["setting1", "setting2"])'
         required: false
-        type: string # Representing an array as a JSON string
-        default: '' # Default to an empty JSON array string
+        type: string
+        default: ''
 
 jobs:
   build-and-package:
@@ -43,51 +43,45 @@ jobs:
       - name: Build Universal Widget for Zendesk
         if: github.event.inputs.platform == 'Zendesk'
         run: npm run build:zendesk
-        working-directory: universal-widget-v2 # Run build command from within the widget repo
+        working-directory: universal-widget-v2
 
       - name: Get Hashed Filenames
         if: github.event.inputs.platform == 'Zendesk'
         id: get_filenames
         run: |
-          # Find the hashed JS bundle filename (e.g., ticketSidebar.[hash].bundle.js)
-          JS_FILE=$(find universal-widget-v2/dist-zendesk/assets/build -name "ticketSidebar.*.bundle.js" -print -quit | xargs basename)
+          echo "Looking for files in universal-widget-v2/dist-zendesk/assets/build"
+          ls -l universal-widget-v2/dist-zendesk/assets/build
+
+          # Find the hashed JS bundle filename
+          JS_FILE_PATH=$(find universal-widget-v2/dist-zendesk/assets/build -name "ticketSidebar.*.bundle.js" -print -quit)
+          JS_FILE=$(basename "$JS_FILE_PATH")
           echo "Found JS file: $JS_FILE"
           echo "JS_FILE=$JS_FILE" >> $GITHUB_OUTPUT
 
-          # Find the hashed CSS file filename (e.g., ticketSidebar.[hash].css)
-          CSS_FILE=$(find universal-widget-v2/dist-zendesk/assets/build -name "ticketSidebar.*.css" -print -quit | xargs basename)
+          # Find the hashed CSS file filename
+          CSS_FILE_PATH=$(find universal-widget-v2/dist-zendesk/assets/build -name "ticketSidebar.*.css" -print -quit)
+          CSS_FILE=$(basename "$CSS_FILE_PATH")
           echo "Found CSS file: $CSS_FILE"
           echo "CSS_FILE=$CSS_FILE" >> $GITHUB_OUTPUT
         working-directory: .
 
-      - name: Assemble Zendesk App Package
+      - name: Assemble Zendesk App Package and Replace Placeholders
         if: github.event.inputs.platform == 'Zendesk'
         run: |
           echo "Assembling Zendesk package..."
-          # Create the main package directory
-          mkdir -p zendesk-app-package
-          # Create the assets/build subdirectory
           mkdir -p zendesk-app-package/assets/build
-
-          # Copy the index.html shell from widget-templates to zendesk-app-package/assets/build/
-          cp widget-templates/zendesk-template/index.html zendesk-app-package/assets/build/
-
-          # --- CRITICAL FIX: Use sed to replace placeholders with the actual hashed filenames ---
-          # We use a different delimiter '|' to avoid issues with '/' in paths.
+          cp widget-templates/zendesk-template/index.html zendesk-app-package/assets/build/index.html
+          
+          # Use sed to replace placeholders with the actual hashed filenames
           sed -i "s|TICKET_SIDEBAR_JS_PLACEHOLDER|${{ steps.get_filenames.outputs.JS_FILE }}|g" zendesk-app-package/assets/build/index.html
           sed -i "s|TICKET_SIDEBAR_CSS_PLACEHOLDER|${{ steps.get_filenames.outputs.CSS_FILE }}|g" zendesk-app-package/assets/build/index.html
 
-          # Copy the generated JS and CSS bundles from universal-widget-v2/dist-zendesk/assets/build/
-          # These will have hashed filenames, e.g., main.[hash].js, main.[hash].css
           cp universal-widget-v2/dist-zendesk/assets/build/* zendesk-app-package/assets/build/ || true
-
-          # Copy manifest.json and zcli.apps.config.json to the root of the package
+          
           cp widget-templates/zendesk-template/manifest.json zendesk-app-package/
           cp widget-templates/zendesk-template/zcli.apps.config.json zendesk-app-package/
-          # Copy translations to the translations/ directory
           mkdir -p zendesk-app-package/translations
           cp widget-templates/zendesk-template/translations/en.json zendesk-app-package/translations/
-          # Copy other static assets (logos, screenshots etc.) directly into the assets/ folder
           cp widget-templates/zendesk-template/assets/* zendesk-app-package/assets/ || true
 
           echo "Zendesk package content:"
@@ -96,9 +90,9 @@ jobs:
 
       - name: Install ZCLI
         if: github.event.inputs.platform == 'Zendesk'
-        run: npm install @zendesk/zcli -g # Install ZCLI globally
+        run: npm install @zendesk/zcli -g
 
-      - name: Validate, Package, and Deploy to Zendesk
+      - name: Deploy to Zendesk
         if: github.event.inputs.platform == 'Zendesk'
         env:
           ZENDESK_SUBDOMAIN: ${{ secrets.ZENDESK_SUBDOMAIN }}
@@ -106,17 +100,14 @@ jobs:
           ZENDESK_API_TOKEN: ${{ secrets.ZENDESK_API_TOKEN }}
         run: |
           echo "Deploying Zendesk app using zcli..."
-          zcli apps:package ./zendesk-app-package
-          # zcli apps:update takes the app directory and handles packaging internally
           zcli apps:update ./zendesk-app-package
-        working-directory: . # Run from the root of the runner
+        working-directory: .
 
       - name: Upload Zendesk App Artifact
         if: github.event.inputs.platform == 'Zendesk'
         uses: actions/upload-artifact@v4
         with:
           name: zendesk-app-package
-          # zcli apps:update creates the package in a 'tmp' directory at the execution root before uploading
           path: zendesk-app-package/tmp/*.zip
           retention-days: 5
 
