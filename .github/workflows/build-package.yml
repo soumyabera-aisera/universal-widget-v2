@@ -137,13 +137,6 @@ jobs:
       - name: Install ServiceNow CLI (snc)
         if: github.event.inputs.platform == 'ServiceNow'
         run: npm install -g @servicenow/cli
-      
-      # FIX: Use NPM_CONFIG_PREFIX to reliably find the global bin directory
-      - name: Add Node Global Bin to PATH
-        if: github.event.inputs.platform == 'ServiceNow'
-        run: echo "$NPM_CONFIG_PREFIX/bin" >> $GITHUB_PATH
-        env:
-          NPM_CONFIG_PREFIX: ${{ env.NPM_CONFIG_PREFIX }}
 
       - name: Deploy to ServiceNow
         if: github.event.inputs.platform == 'ServiceNow'
@@ -152,12 +145,13 @@ jobs:
           SNC_PASSWORD: ${{ inputs.password }}
         run: |
           echo "Deploying to ServiceNow instance: ${{ inputs.loginHost }}"
+          # Find the path of the globally installed `snc` executable and run it
+          SNC_PATH=$(npm root -g)/@servicenow/cli/bin/snc
           mkdir -p servicenow-app/snc-web-component/
           
-          # Correct the path to the built file
           cp universal-widget-v2/dist-servicenow/servicenow-component.js servicenow-app/snc-web-component/
 
-          snc ui-component deploy \
+          $SNC_PATH ui-component deploy \
             --loginHost ${{ inputs.loginHost }} \
             --username $SNC_USERNAME \
             --password $SNC_PASSWORD \
