@@ -25,6 +25,14 @@ on:
       password:
         description: 'ServiceNow password'
         required: false
+      
+      # Salesforce specific inputs
+      sfLoginUrl:
+        description: 'Salesforce login URL (e.g., https://login.salesforce.com)'
+        required: false
+      sfUsername:
+        description: 'Salesforce username'
+        required: false
 
 jobs:
   build-and-package:
@@ -111,6 +119,7 @@ jobs:
           ZENDESK_API_TOKEN: ${{ secrets.ZENDESK_API_TOKEN }}
         run: |
           echo "Deploying Zendesk app using zcli..."
+          zcli apps:package ./zendesk-app-package
           zcli apps:update ./zendesk-app-package
         working-directory: .
 
@@ -121,11 +130,7 @@ jobs:
           name: zendesk-app-package
           path: zendesk-app-package/tmp/*.zip
           retention-days: 5
-
-      - name: Handle Salesforce (Not Implemented Yet)
-        if: github.event.inputs.platform == 'Salesforce'
-        run: echo "Salesforce packaging is not yet implemented. Please refer to the documentation for manual steps."
-
+      
       # =================================================================
       #                       ServiceNow Pipeline
       # =================================================================
@@ -145,7 +150,6 @@ jobs:
           SNC_PASSWORD: ${{ inputs.password }}
         run: |
           echo "Deploying to ServiceNow instance: ${{ inputs.loginHost }}"
-          # Find the path of the globally installed `snc` executable and run it
           SNC_PATH=$(npm root -g)/@servicenow/cli/bin/snc
           mkdir -p servicenow-app/snc-web-component/
           
@@ -156,3 +160,37 @@ jobs:
             --username $SNC_USERNAME \
             --password $SNC_PASSWORD \
             --componentDir 'servicenow-app'
+
+      # =================================================================
+      #                       Salesforce Pipeline
+      # =================================================================
+      - name: Build Universal Widget for Salesforce
+        if: github.event.inputs.platform == 'Salesforce'
+        run: npm run build:salesforce
+        working-directory: universal-widget-v2
+
+      - name: Install Salesforce CLI
+        if: github.event.inputs.platform == 'Salesforce'
+        run: npm install -g @salesforce/cli
+
+      - name: Deploy to Salesforce
+        if: github.event.inputs.platform == 'Salesforce'
+        env:
+          SF_USERNAME: ${{ inputs.sfUsername }}
+          SF_PASSWORD: ${{ secrets.SF_PASSWORD }}
+        run: |
+          echo "Deploying to Salesforce org: ${{ inputs.sfLoginUrl }}"
+          SF_PATH=$(npm root -g)/@salesforce/cli/bin/sf
+          
+          # Create a Salesforce DX project structure
+          mkdir -p salesforce-app/force-app/main/default/lwc/aiseraUniversalWidget
+          
+          # Copy the built files into the LWC directory
+          cp universal-widget-v2/dist-salesforce/salesforce-component.js salesforce-app/force-app/main/default/lwc/aiseraUniversalWidget/
+          cp universal-widget-v2/dist-salesforce/salesforce-component.js-meta.xml salesforce-app/force-app/main/default/lwc/aiseraUniversalWidget/
+          
+          # Authorize the org using JWT
+          $SF_PATH org:login:jwt -u $SF_USERNAME -f <your-jwt-key-file> -i <your-consumer-key> -d -r ${{ inputs.sfLoginUrl }}
+          
+          # Deploy the component
+          $SF_PATH project:deploy:start --source-dir salesforce-app/force-app --wait 10
