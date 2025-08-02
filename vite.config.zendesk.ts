@@ -5,30 +5,25 @@ import { resolve } from 'path';
 export default defineConfig({
   base: './',
   build: {
-    // Output directory for the Zendesk build
     outDir: 'dist-zendesk',
-    emptyOutDir: true, // Clear the output directory before building
-    minify: 'esbuild', // Minify JavaScript using esbuild
-    cssMinify: 'esbuild', // Minify CSS using esbuild
+    emptyOutDir: true,
+    minify: 'esbuild',
+    cssMinify: 'esbuild',
 
-    // Configure Rollup for the build process
     rollupOptions: {
-      // Define the entry point for the application.
-      // This will be your main widget file, which Vite will process
-      // and generate the necessary JS and CSS bundles from.
+      // CRITICAL FIX: The input key is now 'ticketSidebar' to match the workflow.
       input: {
-        main: resolve(__dirname, 'src/aisera-universal-widget.ts'),
+        ticketSidebar: resolve(__dirname, 'src/zendesk-entry.ts'),
       },
       output: {
-        // Configure naming and paths for generated assets (JS, CSS, etc.)
-        // This ensures they are placed into 'assets/build/' within the 'dist-zendesk' folder.
-        assetFileNames: 'assets/build/[name].[hash].[ext]', // For CSS files
-        chunkFileNames: 'assets/build/[name].[hash].js',    // For JS chunks
-        entryFileNames: 'assets/build/[name].[hash].js',    // For the main JS entry file
+        // Filenames are now based on 'ticketSidebar'
+        assetFileNames: 'assets/build/[name].[hash].css',
+        chunkFileNames: 'assets/build/[name].[hash].js',
+        // And the entry file has the .bundle.js suffix.
+        entryFileNames: 'assets/build/[name].[hash].bundle.js',
       },
     },
     
-    // Target modern browsers for the build output
     target: 'es2017',
   },
 });
