@@ -14,6 +14,17 @@ on:
         required: false
         type: string
         default: ''
+      
+      # ServiceNow specific inputs
+      loginHost:
+        description: 'ServiceNow instance URL (e.g., https://dev12345.service-now.com)'
+        required: false
+      username:
+        description: 'ServiceNow username'
+        required: false
+      password:
+        description: 'ServiceNow password'
+        required: false
 
 jobs:
   build-and-package:
@@ -40,27 +51,26 @@ jobs:
         run: npm install
         working-directory: universal-widget-v2
 
+      # =================================================================
+      #                        Zendesk Pipeline
+      # =================================================================
       - name: Build Universal Widget for Zendesk
         if: github.event.inputs.platform == 'Zendesk'
         run: npm run build:zendesk
         working-directory: universal-widget-v2
 
-      - name: Get Hashed Filenames
+      - name: Get Hashed Filenames for Zendesk
         if: github.event.inputs.platform == 'Zendesk'
-        id: get_filenames
+        id: get_zendesk_filenames
         run: |
           echo "Looking for files in universal-widget-v2/dist-zendesk/assets/build"
           ls -l universal-widget-v2/dist-zendesk/assets/build
 
-          # Find the hashed JS bundle filename
-          # FIX: Updated the filename to match the new entry point
           JS_FILE_PATH=$(find universal-widget-v2/dist-zendesk/assets/build -name "ticketSidebar.*.bundle.js" -print -quit)
           JS_FILE=$(basename "$JS_FILE_PATH")
           echo "Found JS file: $JS_FILE"
           echo "JS_FILE=$JS_FILE" >> $GITHUB_OUTPUT
 
-          # Find the hashed CSS file filename
-          # FIX: Updated the filename to match the new entry point
           CSS_FILE_PATH=$(find universal-widget-v2/dist-zendesk/assets/build -name "ticketSidebar.*.css" -print -quit)
           CSS_FILE=$(basename "$CSS_FILE_PATH")
           echo "Found CSS file: $CSS_FILE"
@@ -74,9 +84,8 @@ jobs:
           mkdir -p zendesk-app-package/assets/build
           cp widget-templates/zendesk-template/index.html zendesk-app-package/assets/build/index.html
           
-          # Use sed to replace placeholders with the actual hashed filenames
-          sed -i "s|TICKET_SIDEBAR_JS_PLACEHOLDER|${{ steps.get_filenames.outputs.JS_FILE }}|g" zendesk-app-package/assets/build/index.html
-          sed -i "s|TICKET_SIDEBAR_CSS_PLACEHOLDER|${{ steps.get_filenames.outputs.CSS_FILE }}|g" zendesk-app-package/assets/build/index.html
+          sed -i "s|TICKET_SIDEBAR_JS_PLACEHOLDER|${{ steps.get_zendesk_filenames.outputs.JS_FILE }}|g" zendesk-app-package/assets/build/index.html
+          sed -i "s|TICKET_SIDEBAR_CSS_PLACEHOLDER|${{ steps.get_zendesk_filenames.outputs.CSS_FILE }}|g" zendesk-app-package/assets/build/index.html
 
           cp universal-widget-v2/dist-zendesk/assets/build/* zendesk-app-package/assets/build/ || true
           
@@ -102,7 +111,6 @@ jobs:
           ZENDESK_API_TOKEN: ${{ secrets.ZENDESK_API_TOKEN }}
         run: |
           echo "Deploying Zendesk app using zcli..."
-          zcli apps:package ./zendesk-app-package
           zcli apps:update ./zendesk-app-package
         working-directory: .
 
@@ -111,9 +119,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: zendesk-app-package
-          path: |
-            zendesk-app-package/tmp/*.zip
-            ./tmp/*.zip
+          path: zendesk-app-package/tmp/*.zip
           retention-days: 5
 
       - name: Handle Salesforce (Not Implemented Yet)
@@ -140,8 +146,10 @@ jobs:
         run: |
           echo "Deploying to ServiceNow instance: ${{ inputs.loginHost }}"
           mkdir -p servicenow-app/snc-web-component/
-          cp -r universal-widget-v2/dist/assets/build/servicenow-component.* servicenow-app/snc-web-component/
           
+          # FIX: Correct the path to the built file
+          cp universal-widget-v2/dist-servicenow/servicenow-component.js servicenow-app/snc-web-component/
+
           snc ui-component deploy \
             --loginHost ${{ inputs.loginHost }} \
             --username $SNC_USERNAME \
