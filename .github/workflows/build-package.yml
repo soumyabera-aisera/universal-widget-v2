@@ -22,7 +22,7 @@ jobs:
       - name: Checkout widget-templates repository
         uses: actions/checkout@v4
         with:
-          repository: soumyabera-aisera/widget-templates # Replace with your actual template repo
+          repository: soumyabera-aisera/widget-templates
           path: widget-templates
 
       - name: Set up Node.js
@@ -53,27 +53,34 @@ jobs:
           cp widget-templates/zendesk-template/translations/en.json zendesk-app-package/translations/
           # Copy assets (logos, etc.) from widget-templates/zendesk-template/assets to zendesk-app-package/assets
           mkdir -p zendesk-app-package/assets
-          cp widget-templates/zendesk-template/assets/* zendesk-app-package/assets/ || true # Allow failure if dir is empty
+          cp widget-templates/zendesk-template/assets/* zendesk-app-package/assets/ || true # Ignore errors if no assets are found
           echo "Zendesk package content:"
           ls -R zendesk-app-package/
         working-directory: . # Run from the root of the runner to manage files from both checked-out repos
 
-      - name: Create Zendesk App Zip
+      - name: Install ZCLI
         if: github.event.inputs.platform == 'Zendesk'
-        uses: thedoctor0/zip-release@0.7.5
-        with:
-          type: 'zip'
-          filename: 'zendesk-universal-widget.zip'
-          directory: 'zendesk-app-package' # This parameter specifies the directory to zip
-          path: '.' # Zip the contents of the specified 'directory'
-          exclusions: '*.git* /*node_modules/*'
+        run: npm install @zendesk/zcli -g # Install ZCLI globally [2]
 
-      - name: Upload Zendesk Artifact
+      - name: Validate, Package, and Deploy to Zendesk
+        if: github.event.inputs.platform == 'Zendesk'
+        env:
+          ZENDESK_SUBDOMAIN: ${{ secrets.ZENDESK_SUBDOMAIN }}
+          ZENDESK_EMAIL: ${{ secrets.ZENDESK_EMAIL }}
+          ZENDESK_API_TOKEN: ${{ secrets.ZENDESK_API_TOKEN }}
+        run: |
+          echo "Deploying Zendesk app using zcli..."
+          # zcli apps:update takes the app directory and handles packaging internally
+          zcli apps:update ./zendesk-app-package
+        working-directory: . # Run from the root of the runner
+
+      - name: Upload Zendesk App Artifact
         if: github.event.inputs.platform == 'Zendesk'
         uses: actions/upload-artifact@v4
         with:
-          name: zendesk-universal-widget
-          path: zendesk-app-package/zendesk-universal-widget.zip # Corrected path
+          name: zendesk-app-package
+          # zcli apps:update creates the package in a 'tmp' directory at the execution root before uploading
+          path: ./tmp/*.zip
           retention-days: 5
 
       - name: Handle Salesforce (Not Implemented Yet)
